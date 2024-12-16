@@ -1,5 +1,5 @@
 # 💫 About Me:
-18 yo newbie developer<br>Student in Banü <br>
+Student in BANÜ <br>
 
 
 ## 🌐 Socials:
