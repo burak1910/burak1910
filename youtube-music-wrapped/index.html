@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouTube Music Aylık Wrapped</title>
+  <meta name="description" content="YouTube Music dinleme geçmişinden aylık istatistikler: ne kadar dinledin, kimi dinledin.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">▶</span>
+      <span>Music <b>Wrapped</b> <small>aylık</small></span>
+    </div>
+    <button id="resetBtn" class="ghost hidden" type="button">Yeni veri yükle</button>
+  </header>
+
+  <!-- Yükleme ekranı -->
+  <main id="uploadView" class="upload">
+    <h1>Sene sonunu bekleme.<br><span class="grad">Her ay kendi Wrapped'ini gör.</span></h1>
+    <p class="lead">YouTube Music geçmişini yükle; o ay kaç dakika dinlediğini, en çok kimi ve hangi şarkıları dinlediğini anında gör.
+      Verin <b>hiçbir sunucuya gönderilmez</b>, tamamen tarayıcında işlenir.</p>
+
+    <label id="dropZone" class="drop">
+      <input id="fileInput" type="file" accept=".json,.html,.htm" multiple hidden>
+      <span class="drop-icon" aria-hidden="true">⬆</span>
+      <strong>watch-history.json</strong> veya <strong>watch-history.html</strong> dosyasını buraya sürükle
+      <span class="muted">ya da seçmek için tıkla</span>
+    </label>
+    <p id="uploadError" class="error hidden"></p>
+    <button id="demoBtn" class="ghost" type="button">Demo verisiyle dene</button>
+
+    <details class="howto">
+      <summary>Dosyayı nasıl alırım? (Google Takeout)</summary>
+      <ol>
+        <li><a href="https://takeout.google.com/" target="_blank" rel="noopener">takeout.google.com</a> adresine git.</li>
+        <li>"Seçimlerin tümünü kaldır"a bas, listeden yalnızca <b>YouTube ve YouTube Music</b>'i işaretle.</li>
+        <li>"Tüm YouTube verileri dahil" butonuna bas, sadece <b>geçmiş</b>'i seç.</li>
+        <li>"Birden çok biçim" kısmında geçmiş için <b>JSON</b> seç (HTML de çalışır, JSON daha güvenilir).</li>
+        <li>Dışa aktarımı oluştur, gelen zip'i aç: <code>Takeout/YouTube ve YouTube Music/geçmiş/watch-history.json</code></li>
+      </ol>
+      <p class="muted">Not: Takeout şarkı sürelerini vermez. Dinleme süresi, art arda çalınan şarkılar arasındaki süreden
+        <b>tahmin edilir</b> (aralık 8 dakikadan uzunsa şarkı başına 3,5 dk sayılır).</p>
+    </details>
+  </main>
+
+  <!-- Panel -->
+  <main id="dashView" class="dash hidden">
+    <nav class="period">
+      <button id="prevBtn" class="icon" type="button" aria-label="Önceki dönem">‹</button>
+      <select id="periodSelect" aria-label="Dönem seç"></select>
+      <button id="nextBtn" class="icon" type="button" aria-label="Sonraki dönem">›</button>
+    </nav>
+
+    <section class="hero card">
+      <div>
+        <p class="eyebrow" id="heroPeriod"></p>
+        <p class="hero-num"><span id="heroMinutes">0</span> <small>dakika</small></p>
+        <p class="hero-sub" id="heroSub"></p>
+      </div>
+      <div class="hero-top" id="heroTop"></div>
+    </section>
+
+    <section class="stats">
+      <div class="stat card"><span class="label">Çalma</span><span class="value" id="stPlays"></span></div>
+      <div class="stat card"><span class="label">Farklı sanatçı</span><span class="value" id="stArtists"></span></div>
+      <div class="stat card"><span class="label">Farklı şarkı</span><span class="value" id="stSongs"></span></div>
+      <div class="stat card"><span class="label">Aktif gün</span><span class="value" id="stDays"></span></div>
+      <div class="stat card"><span class="label">En uzun seri</span><span class="value" id="stStreak"></span></div>
+      <div class="stat card"><span class="label">Yeni keşif</span><span class="value" id="stNew"></span></div>
+    </section>
+
+    <section class="grid2">
+      <div class="card">
+        <h2>En çok dinlenen sanatçılar</h2>
+        <ol id="topArtists" class="rank"></ol>
+      </div>
+      <div class="card">
+        <h2>En çok dinlenen şarkılar</h2>
+        <ol id="topSongs" class="rank"></ol>
+      </div>
+    </section>
+
+    <section class="grid2">
+      <div class="card">
+        <h2>Günün hangi saatinde?</h2>
+        <div id="hourChart" class="bars hours"></div>
+        <p class="muted small" id="hourNote"></p>
+      </div>
+      <div class="card">
+        <h2>Haftanın hangi günü?</h2>
+        <div id="weekChart" class="bars week"></div>
+        <p class="muted small" id="weekNote"></p>
+      </div>
+    </section>
+
+    <section class="card" id="calendarCard">
+      <h2>Günlük dinleme</h2>
+      <div id="calendar" class="calendar"></div>
+      <p class="muted small" id="calNote"></p>
+    </section>
+
+    <section class="card">
+      <h2>Aylara göre dinleme <span class="muted small">(tıklayarak aya git)</span></h2>
+      <div id="trend" class="trend"></div>
+    </section>
+
+    <section class="card share">
+      <div>
+        <h2>Paylaşılabilir kart</h2>
+        <p class="muted">Bu dönemin özetini hikâye formatında görsel olarak indir.</p>
+        <button id="downloadBtn" class="primary" type="button">PNG olarak indir</button>
+      </div>
+      <canvas id="shareCanvas" width="1080" height="1920" aria-label="Paylaşım kartı önizlemesi"></canvas>
+    </section>
+
+    <p class="muted small foot">Dinleme süreleri tahminidir. Toplam <span id="footTotal"></span> çalma yüklendi.</p>
+  </main>
+
+  <script src="parser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
